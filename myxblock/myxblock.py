@@ -41,7 +41,18 @@ class MyXBlock(XBlock):
             return self.message_view("Error  (get anonymous student id)", "Cannot get anonymous_student_id in runtime", context)
 
         if self.runtime.anonymous_student_id == "student": 
-            return self.message_view("view", "not know", context)
+            context_dict = {
+            "username": "",
+            "email":"",
+            "url":self.src
+        }
+
+            fragment = Fragment()
+            fragment.add_content(Util.render_template('static/html/myxblock.html', context_dict))
+            fragment.add_css(Util.load_resource("static/css/myxblock.css"))
+            fragment.add_javascript(Util.load_resource("static/js/src/myxblock.js"))
+            fragment.initialize_js("MyXBlock")
+            return fragment
 
         student = self.runtime.get_real_user(self.runtime.anonymous_student_id)
         email = student.email
@@ -67,7 +78,7 @@ class MyXBlock(XBlock):
     def studio_view(self, context=None):
         context_dict = {
             "title": "",
-            "message": ""
+            "message": self.src
         }
 
         fragment = Fragment()

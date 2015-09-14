@@ -6,7 +6,6 @@ import json
 import thread
 import datetime
 import re
-import pymongo
 
 from xblock.core import XBlock
 from xblock.fields import Scope, Integer, String, List, Boolean
@@ -27,13 +26,7 @@ class MyXBlock(XBlock):
     # TO-DO: delete count, and define your own fields.
     logger = Util.uc_logger()
 
-    is_new = Boolean(default=True, scope=Scope.user_state, help="is new")
-    private_key = String(default="", scope=Scope.user_state, help="SHH Private Key")
-    public_key = String(default="", scope=Scope.user_state, help="SHH Public Key")
-    git_password = String(default="", scope=Scope.user_state, help="Git password")
-    git_id = Integer(default="", scope=Scope.user_state, help="Git id")
-    git_user_token = String(default="", scope=Scope.user_state, help="Git private token")
-
+    src = String(default="", scope=Scope.content, help="url of the tiku")
     CONFIG = Config.CONFIG
     url = CONFIG["URL"]
  
@@ -46,7 +39,21 @@ class MyXBlock(XBlock):
          # runtime error
         if not hasattr(self.runtime, "anonymous_student_id"):
             return self.message_view("Error  (get anonymous student id)", "Cannot get anonymous_student_id in runtime", context)
- 
+
+        if self.runtime.anonymous_student_id == "student": 
+            context_dict = {
+            "username": username,
+            "email":email,
+            "url":self.src
+        }
+
+            fragment = Fragment()
+            fragment.add_content(Util.render_template('static/html/myxblock.html', context_dict))
+            fragment.add_css(Util.load_resource("static/css/myxblock.css"))
+            fragment.add_javascript(Util.load_resource("static/js/src/myxblock.js"))
+            fragment.initialize_js("MyXBlock")
+            return fragment
+
         student = self.runtime.get_real_user(self.runtime.anonymous_student_id)
         email = student.email
         name = student.first_name + " " + student.last_name
@@ -58,7 +65,7 @@ class MyXBlock(XBlock):
         context_dict = {
             "username": username,
             "email":email,
-            "url":self.url
+            "url":self.src
         }
 
         fragment = Fragment()
@@ -69,7 +76,18 @@ class MyXBlock(XBlock):
         return fragment
 
     def studio_view(self, context=None):
-        return self.message_view("studio view", "this is not need", context) 
+        context_dict = {
+            "title": "",
+            "message": ""
+        }
+
+        fragment = Fragment()
+        fragment.add_content(Util.render_template('static/html/studio_view_new.html', context_dict))
+        fragment.add_css(Util.load_resource("static/css/studio.css"))
+        fragment.add_javascript(Util.load_resource("static/js/src/myxblock.js"))
+        fragment.initialize_js("MyXBlock")
+        return fragment
+ 
 
     def message_view(self, title, message, context=None):
         context_dict = {
@@ -94,6 +112,13 @@ class MyXBlock(XBlock):
         self.count += 1
         return {"count": self.count}
 
+    @XBlock.json_handler
+    def studio_submit(self, data, suffix=""):
+        self.logger.info("src"+ data["src"])
+        self.src=data["src"]
+        self.save()
+        return {"result":True}
+
     # TO-DO: change this to create the scenarios you'd like to see in the
     # workbench while developing your XBlock.
     @staticmethod
@@ -108,3 +133,4 @@ class MyXBlock(XBlock):
                 </vertical_demo>
              """),
         ]
+

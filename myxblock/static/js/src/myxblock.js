@@ -34,7 +34,7 @@ function MyXBlock(runtime, element) {
            
    });
 
-    $('.cancle-button', element).bind('click', function(){
+    $('.cancel-button', element).bind('click', function(){
         console.log("cancel");
          runtime.notify('cancel', {});
     });
